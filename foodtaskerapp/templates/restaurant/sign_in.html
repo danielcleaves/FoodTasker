@@ -1,0 +1,19 @@
+{% load staticfiles %}
+<!DOCTYPE html>	
+<html lang= "en">
+<head>
+	<title>Home Page</title>
+
+	<link rel = "stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+	<link rel = "stylesheet" href="{% static 'css/style.css' %}">
+
+	<script src="{% static 'js/bootstrap.min.js' %}"></script>
+</head>
+<body>
+	<form method = "POST">
+		{% csrf_token %}
+		{{ form }}
+		<button type = "submit">Sign In</button>
+	</form>
+</body>
+</html>
