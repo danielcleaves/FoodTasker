@@ -7,14 +7,13 @@
 		<div class="panel">
 			<div class="panel-heading bg-blue">
 				<h4 class = "panel-title text-center text-white">
-					Account
+					Edit Meal
 				</h4>
 			</div>
 			<div class="panel-body">
-				<form method = "POST" enctype="multipart/form-data">
+				<form method = "POST" enctype="multipart/form-data" novalidate="">
 					{% csrf_token %}
-					{% bootstrap_form user_form %}
-					{% bootstrap_form restaurant_form %}
+					{% bootstrap_form form %}
 					<button type="submit" class = "btn btn-pink">Update</button>
 				</form>
 			</div>

@@ -9,6 +9,14 @@ body {
 	background-color: #3f3f63
 }
 
+.bg-gray {
+	background-color: #88A1B2;
+}
+
+.text-white {
+	color: white;
+}
+
 .btn-pink {
 	color: white;
 	background-color: #EE5462;
@@ -103,4 +111,19 @@ body {
 
 .content {
 	padding: 0 40px;
+}
+
+.content .panel {
+	border: none;
+}
+
+.table > thead > tr > th,
+.table > thead > tr > td {
+	vertical-align: middle;
+}
+
+.table,
+.table > thead > tr > th {
+	border-color: #88A1B2;
+
 }
