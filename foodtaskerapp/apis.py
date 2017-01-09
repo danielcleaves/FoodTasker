@@ -6,8 +6,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 from oauth2_provider.models import AccessToken
 
-from foodtaskerapp.models import Restaurant, Meal, Order, OrderDetails
+from foodtaskerapp.models import Restaurant, Meal, Order, OrderDetails, Driver
 from foodtaskerapp.serializers import RestaurantSerializer, MealSerializer, OrderSerializer
+
+import stripe
+from foodtasker.settings import STRIPE_API_KEY
+
+stripe.api_key = STRIPE_API_KEY
 
 
 #########
@@ -55,6 +60,10 @@ def customer_add_order(request):
 		# Get profile
 		customer = access_token.user.customer
 
+		# Get Stripe
+
+		stripe_token = request.POST["stripe_token"]
+
 		#Check whtether customer has any order that is not delivered 
 		if Order.objects.filter(customer = customer).exclude(status = Order.DELIVERED):
 			return JsonResponse({"status": "fail", "error": "Your last order must be completed."})
@@ -72,9 +81,18 @@ def customer_add_order(request):
 
 
 		if len(order_details) > 0:
-			# Step 1 - Create an Order
 
-			order = Order.objects.create(
+			# Step 1 Create a charge: this will charge customer's card
+			charge = stripe.Charge.create(
+				amount = order_total * 100, # Amount in cents
+				currency = "usd",
+				source = stripe_token,
+				description = "FoodTasker Order"
+			)
+
+			if charge.status != "failed":
+				# Step 2 - Create an Order
+				order = Order.objects.create(
 				customer = customer,
 				restaurant_id = request.POST['restaurant_id'],
 				total = order_total,
@@ -90,7 +108,10 @@ def customer_add_order(request):
 					quantity = meal['quantity'],
 					sub_total = Meal.objects.get(id = meal["meal_id"]).price * meal["quantity"]
 				)
-			return JsonResponse({"status": "success"})
+				return JsonResponse({"status": "success"})
+			else:
+				return JsonResponse({"status": "failed", "error": "Failed to connect to Stripe."})
+			
 
 def customer_get_latest_order(request):
 	access_token = AccessToken.objects.get(token = request.GET.get("access_token"), 
@@ -100,6 +121,19 @@ def customer_get_latest_order(request):
 	order = OrderSerializer(Order.objects.filter(customer = customer).last()).data
 
 	return JsonResponse({"order": order})
+
+def customer_driver_location(request):
+    access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
+        expires__gt = timezone.now())
+
+    customer = access_token.user.customer
+
+    # Get driver's location related to this customer's current order.
+    current_order = Order.objects.filter(customer = customer, status = Order.ONTHEWAY).last()
+    location = current_order.driver.location
+
+    return JsonResponse({"location": location})
+
 
 #########
 # Restaurant
@@ -155,9 +189,25 @@ def driver_pick_order(request):
 		except Order.DOESNOTExist:
 			return JsonResponse({"status": "failed", "error": "This order has been picked up by another driver."})
 
-
-
 	return JsonResponse({})
+
+
+# POST: params: access_token, "lat, lng"
+@csrf_exempt
+def driver_update_location(request):
+	if request.method == "POST":
+		# Get Token
+		access_token = AccessToken.objects.get(token = request.POST.get("access_token"), 
+			expires__gt = timezone.now())
+		# Get Driver
+		driver = access_token.user.driver
+
+		# Set location string => database
+		driver.location = request.POST["location"]
+		driver.save()
+
+		return JsonResponse({"status": "success"})
+
 
 # Get params: access_token
 def driver_get_latest_order(request):
