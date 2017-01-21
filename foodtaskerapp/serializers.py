@@ -5,9 +5,9 @@ from foodtaskerapp.models import Restaurant, Meal, Customer, Driver, Order, Orde
 class RestaurantSerializer(serializers.ModelSerializer):
 	logo = serializers.SerializerMethodField()
 
-	def get_logo(self, resraurant):
+	def get_logo(self, restaurant):
 		request = self.context.get('request')
-		logo_url = restaurant.logo_url
+		logo_url = restaurant.logo.url
 		return request.build_absolute_uri(logo_url)
 
 	class Meta:
@@ -20,7 +20,7 @@ class MealSerializer(serializers.ModelSerializer):
 
 	def get_image(self, meal):
 		request = self.context.get('request')
-		image_url = meal.image.image_url
+		image_url = meal.image.url
 		return request.build_absolute_uri(image_url)
 
 	class Meta:
@@ -56,7 +56,7 @@ class OrderMealSerializer(serializers.ModelSerializer):
 		fields = ("id", "name","price")
 
 class OrderDetailsSerializer(serializers.ModelSerializer):
-	meal = OrderMealSerializer
+	meal = OrderMealSerializer()
 
 	class Meta:
 		model = OrderDetails
